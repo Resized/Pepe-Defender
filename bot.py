@@ -9,12 +9,12 @@ from discord.ext import commands
 load_dotenv()
 TOKEN = os.getenv('DISCORD_TOKEN')
 GUILD = os.getenv('DISCORD_GUILD')
-# 305730826266607616 Resized
-# 202825823974064129 Pazrim
-PAZRIM = 202825823974064129
-RESIZED = 305730826266607616
-GENERAL_CHANNEL = 352519274117595136
-AGULEI_ROLE = 494285611063181332
+PAZRIM = int(os.getenv('PAZRIM'))
+RESIZED = int(os.getenv('RESIZED'))
+GENERAL_CHANNEL = int(os.getenv('GENERAL_CHANNEL'))
+AGULEI_ROLE = int(os.getenv('AGULEI_ROLE'))
+ESCAPE_ROOM = int(os.getenv('ESCAPE_ROOM'))
+isDefendOn = True
 
 bot = commands.Bot(command_prefix='!')
 
@@ -61,13 +61,12 @@ async def on_member_update(before, after):
             guild = discord.utils.get(bot.guilds, name=GUILD)
             role = guild.get_role(AGULEI_ROLE)
             channel = bot.get_channel(GENERAL_CHANNEL)
-            await channel.send(role.mention + ' He has come <:monkaW:748581021376839783>')
+            await channel.send(role.mention + ' He has come <:monkaW:675062105996656640>')
 
 
 @bot.event
 async def on_voice_state_update(member, before, after):
-
-    if before.channel != after.channel and member.id == PAZRIM:
+    if before.channel != after.channel and member.id == PAZRIM and isDefendOn:
         guild = discord.utils.get(bot.guilds, name=GUILD)
         channel_to_move = discord.utils.find(lambda c: c != after.channel, guild.voice_channels)
 
@@ -78,6 +77,34 @@ async def on_voice_state_update(member, before, after):
 
 @bot.command(name='vanish', help='Moves every user but Pazrim to a secret voice channel')
 async def vanish(ctx):
+    guild = discord.utils.get(bot.guilds, name=GUILD)
+    escape_room = guild.get_channel(ESCAPE_ROOM)
+    channel = bot.get_channel(GENERAL_CHANNEL)
+
+    lior = guild.get_member(PAZRIM)
+    if lior.voice is not None and lior.voice.channel is not None:
+        for member in lior.voice.channel.members:
+            if member.id != PAZRIM:
+                await member.move_to(escape_room)
+        await channel.send('Discord has vanished <:pepeLaugh:672820944166977546>')
+    else:
+        await channel.send('No reason to vanish 😔')
+
+
+@bot.command(name='defenceoff', help='Turns off Pazrims auto defence')
+async def pazrim_defend_off(ctx):
+    global isDefendOn
+    isDefendOn = False
+    channel = bot.get_channel(GENERAL_CHANNEL)
+    await channel.send('Defense is off <:PepeHands:526494198858383361>')
+
+
+@bot.command(name='defenceon', help='Turns on Pazrims auto defence')
+async def pazrim_defend_on(ctx):
+    global isDefendOn
+    isDefendOn = True
+    channel = bot.get_channel(GENERAL_CHANNEL)
+    await channel.send('Defense is on <:pepeLaugh:672820944166977546>')
 
 
 bot.run(TOKEN)
