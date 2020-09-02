@@ -200,28 +200,11 @@ async def gen_teams(ctx):
     name='gravity',
     description='Plays a gravity voice clip in the voice channel')
 async def gravity(ctx, volume=1.0):
-    if volume > 1.0:
-        volume = 1.0
+    volume = min(1.0, volume)
     volume *= 0.3
-    # grab the user who sent the command
-    user = ctx.message.author
-
-    # only play music if user is in a voice channel
-    try:
-        voice_channel = user.voice.channel
-    except AttributeError:
-        await ctx.channel.send('User is not in a channel.')
-        return
-    # create StreamPlayer
-    voice_client = await voice_channel.connect()
-    audio_source = discord.FFmpegPCMAudio(executable=FFMPEG, source="gravity.mp3")
-    audio_source = discord.PCMVolumeTransformer(audio_source, volume)
-    voice_client.play(audio_source)
-    # disconnect after the player has finished
-    while voice_client.is_playing():
-        await asyncio.sleep(0.5)
-    voice_client.stop()
-    await voice_client.disconnect()
+    clip = 'gravity.mp3'
+    current_room = ctx.message.author.voice.channel
+    await play_sound(current_room, clip, volume)
 
 
 @bot.command(name='msg_count', help='msg_count [username] [search_limit]')
@@ -377,7 +360,7 @@ async def nice(ctx, volume: float = 1.0):
     await play_sound(current_room, shit_clip, volume)
 
 
-@bot.command(name='crickets', help='Michael Rosen: Noice')
+@bot.command(name='crickets', help='Crickets voice clip')
 async def crickets(ctx, volume: float = 1.0):
     volume = min(1.0, volume)
     shit_clip = 'crickets.mp3'
@@ -385,14 +368,8 @@ async def crickets(ctx, volume: float = 1.0):
     await play_sound(current_room, shit_clip, volume)
 
 
-@bot.command(name='connect', help='Join current voice channel')
-async def connect(ctx):
-    """channel = ctx.message.author.voice.channel
-    member = bot.get_member(748511798831087667)
-    try:
-        await channel.connect()
-    except discord.ClientException:
-        await member.move_to(ctx.message.author.voice.channel)"""
+@bot.command(name='join', help='Join current voice channel')
+async def join(ctx):
     guild = ctx.guild
     author: discord.Member = ctx.author
     voice_client: discord.VoiceClient = guild.voice_client
@@ -401,13 +378,13 @@ async def connect(ctx):
         vc = await channel.connect()
         return vc
     elif voice_client.channel != channel:
-        print('im here')
-        return await voice_client.move_to(channel)
+        await voice_client.disconnect()
+        return await channel.connect()
     return voice_client
 
 
-@bot.command(name='disconnect', help='Join current voice channel')
-async def disconnect(ctx):
+@bot.command(name='leave', help='Leaves voice channel')
+async def leave(ctx):
     guild = ctx.guild
     voice_client: discord.VoiceClient = guild.voice_client
     if voice_client:
