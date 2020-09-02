@@ -278,7 +278,7 @@ async def on_voice_state_update(member, before, after):
             await asyncio.sleep(1)
             if time_to_move == 0:
                 current_room = member.voice.channel
-                await play_sound(current_room, "tzirman3.mp3", 1)
+                await play_sound(current_room, "tzirman.mp3", 1)
                 time_to_move = 60
 
 
@@ -356,7 +356,7 @@ async def fart(ctx, volume: float = 0.5):
 async def rakdanim(ctx, volume: float = 1.0):
     volume = min(1.0, volume)
     volume *= 0.5
-    rakdan = 'rikigalweakness3.mp3'
+    rakdan = 'rikigalweakness.mp3'
     current_room = ctx.message.author.voice.channel
     await play_sound(current_room, rakdan, volume)
 
