@@ -10,7 +10,6 @@ FFMPEG = os.getenv('FFMPEG_LOCATION')
 
 
 async def play_sound(bot, channel, sound_clip, volume=1.0):
-    print(bot, channel, sound_clip)
     to_disconnect = True
     try:
         voice_client = await channel.connect()

@@ -60,7 +60,6 @@ async def on_ready():
     print(f'{bot.user.name} has connected to Discord!')
     game = discord.Game(name="with my balls")
     await bot.change_presence(status=discord.Status.online, activity=game)
-    print(bot)
 
 
 """
