@@ -13,6 +13,8 @@ from dotenv import load_dotenv
 
 from discord.ext import commands
 
+from utils import play_sound
+
 load_dotenv()
 logging.basicConfig(level=logging.WARNING)
 
@@ -29,7 +31,28 @@ ESCAPE_ROOM = int(os.getenv('ESCAPE_ROOM'))
 FFMPEG = os.getenv('FFMPEG_LOCATION')
 isDefendOn = False
 
-bot = commands.Bot(command_prefix='!')
+bot = commands.Bot(command_prefix='!', case_insensitive=True)
+
+
+@bot.command()
+async def load(ctx, extension):
+    bot.load_extension(f'cogs.{extension}')
+
+
+@bot.command()
+async def unload(ctx, extension):
+    bot.unload_extension(f'cogs.{extension}')
+
+
+@bot.command()
+async def reload(ctx, extension):
+    bot.unload_extension(f'cogs.{extension}')
+    bot.load_extension(f'cogs.{extension}')
+
+
+for filename in os.listdir('./cogs'):
+    if filename.endswith('.py'):
+        bot.load_extension(f'cogs.{filename[:-3]}')
 
 
 @bot.event
@@ -37,6 +60,7 @@ async def on_ready():
     print(f'{bot.user.name} has connected to Discord!')
     game = discord.Game(name="with my balls")
     await bot.change_presence(status=discord.Status.online, activity=game)
+    print(bot)
 
 
 """
@@ -149,7 +173,7 @@ async def giphy(ctx, *, search=None):
     await ctx.channel.send(embed=embed)
 
 
-@bot.command(name='clear', help='Clears last number of messages (can specify by specific user)')
+@bot.command(name='clear', help='Clears last messages out of 20 (can specify by specific user)')
 async def message_clear(ctx, amount: typing.Optional[int] = 1, username=''):
     user = ''
     counter = 0
@@ -161,7 +185,7 @@ async def message_clear(ctx, amount: typing.Optional[int] = 1, username=''):
             return
     await ctx.message.delete()
     messages_to_delete = []
-    async for message in ctx.channel.history(limit=10):
+    async for message in ctx.channel.history(limit=20):
         if amount <= 0:
             break
         if user is not None and user != '':
@@ -194,17 +218,6 @@ async def gen_teams(ctx):
     team_2 = ', '.join(display_name_list[num_users // 2:])
     embed.description = 'Team A:\n\t' + team_1 + '\n\n' + 'Team B:\n\t' + team_2
     await ctx.channel.send(embed=embed)
-
-
-@bot.command(
-    name='gravity',
-    description='Plays a gravity voice clip in the voice channel')
-async def gravity(ctx, volume=1.0):
-    volume = min(1.0, volume)
-    volume *= 0.3
-    clip = 'gravity.mp3'
-    current_room = ctx.message.author.voice.channel
-    await play_sound(current_room, clip, volume)
 
 
 @bot.command(name='msg_count', help='msg_count [username] [search_limit]')
@@ -261,7 +274,7 @@ async def on_voice_state_update(member, before, after):
             await asyncio.sleep(1)
             if time_to_move == 0:
                 current_room = member.voice.channel
-                await play_sound(current_room, "tzirman.mp3", 1)
+                await play_sound(current_room, "cogs/sounds/tzirman.mp3", 1)
                 time_to_move = 60
 
 
@@ -311,61 +324,6 @@ async def eight_ball(ctx, *, message=None):
         return
     answer = random.choice(answers)
     await ctx.channel.send(answer)
-
-
-@bot.command(name='fart')
-async def fart(ctx, volume: float = 0.5):
-    volume = min(1.0, volume)
-    volume *= 0.5
-    farts = [
-        'fart-01.mp3',
-        'fart-02.mp3',
-        'fart-03.mp3',
-        'fart-04.mp3',
-        'fart-05.mp3',
-        'fart-06.mp3',
-        'fart-07.mp3',
-        'fart-08.mp3',
-        'fart-squeak-01.mp3',
-        'fart-squeak-02.mp3',
-        'fart-squeak-03.mp3'
-    ]
-    fart_sound = random.choice(farts)
-    current_room = ctx.message.author.voice.channel
-    await play_sound(current_room, fart_sound, 0.5)
-
-
-@bot.command(name='rakdanim', help='')
-async def rakdanim(ctx, volume: float = 1.0):
-    volume = min(1.0, volume)
-    volume *= 0.5
-    rakdan = 'rikigalweakness.mp3'
-    current_room = ctx.message.author.voice.channel
-    await play_sound(current_room, rakdan, volume)
-
-
-@bot.command(name='shit', help='Shieeeeeeeeeeeeeeeeeeeeeeeeeeeet')
-async def shit(ctx, volume: float = 1.0):
-    volume = min(1.0, volume)
-    shit_clip = 'Shiiiit.mp3'
-    current_room = ctx.message.author.voice.channel
-    await play_sound(current_room, shit_clip, volume)
-
-
-@bot.command(name='nice', help='Michael Rosen: Noice')
-async def nice(ctx, volume: float = 1.0):
-    volume = min(1.0, volume)
-    shit_clip = 'click-nice.mp3'
-    current_room = ctx.message.author.voice.channel
-    await play_sound(current_room, shit_clip, volume)
-
-
-@bot.command(name='crickets', help='Crickets voice clip')
-async def crickets(ctx, volume: float = 1.0):
-    volume = min(1.0, volume)
-    shit_clip = 'crickets.mp3'
-    current_room = ctx.message.author.voice.channel
-    await play_sound(current_room, shit_clip, volume)
 
 
 @bot.command(name='join', help='Join current voice channel')
@@ -447,21 +405,11 @@ async def eletter(ctx, *, message: str = None):
     await ctx.channel.send(translated)
 
 
-async def play_sound(channel, sound_clip, volume=1.0):
-    to_disconnect = True
-    try:
-        voice_client = await channel.connect()
-    except discord.ClientException:
-        voice_client = bot.voice_clients[0]
-        to_disconnect = False
-    audio_source = discord.FFmpegPCMAudio(executable=FFMPEG, source=sound_clip)
-    audio_source = discord.PCMVolumeTransformer(audio_source, volume)
-    voice_client.play(audio_source)
-    while voice_client.is_playing():
-        await asyncio.sleep(0.5)
-    if to_disconnect:
-        voice_client.stop()
-        await voice_client.disconnect()
+@bot.event
+async def on_voice_state_update(member, before, after):
+    if member.id == PAZRIM and before.channel is None \
+            and after.channel is not None:
+        await play_sound(member.voice.channel, 'cogs/sounds/oh-no.mp3', 0.5)
 
 
 bot.run(TOKEN)
