@@ -399,8 +399,6 @@ async def eletter(ctx, *, message: str = None):
         else:
             letter_to_add = ord(letter.lower()) - ord(first_letter)
             translated += regional_letters[letter_to_add] + ' '
-    # \U0001f1e6 A
-    # \U0001f1e7 B
     await ctx.channel.send(translated)
 
 
