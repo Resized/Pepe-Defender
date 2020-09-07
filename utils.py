@@ -1,4 +1,6 @@
 import asyncio
+import pickle
+import re
 import discord
 import os
 
@@ -7,6 +9,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 FFMPEG = os.getenv('FFMPEG_LOCATION')
+location = 'cogs/sounds/'
 
 
 async def play_sound(bot, channel, sound_clip, volume=1.0):
@@ -24,3 +27,26 @@ async def play_sound(bot, channel, sound_clip, volume=1.0):
     if to_disconnect:
         voice_client.stop()
         await voice_client.disconnect()
+
+
+def get_filename_from_cd(cd):
+    """
+    Get filename from content-disposition
+    """
+    if not cd:
+        return None
+    fname = re.findall('filename=(.+)', cd)
+    if len(fname) == 0:
+        return None
+    return fname[0]
+
+
+def save_obj(obj, name):
+    with open('obj/' + name + '.pkl', 'wb') as f:
+        pickle.dump(obj, f, pickle.HIGHEST_PROTOCOL)
+        f.close()
+
+
+def load_obj(name):
+    with open('obj/' + name + '.pkl', 'rb') as f:
+        return pickle.load(f)

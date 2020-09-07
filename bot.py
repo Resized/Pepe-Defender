@@ -13,7 +13,7 @@ from dotenv import load_dotenv
 
 from discord.ext import commands
 
-from utils import play_sound
+from utils import play_sound, location
 
 load_dotenv()
 logging.basicConfig(level=logging.WARNING)
@@ -273,7 +273,7 @@ async def on_voice_state_update(member, before, after):
             await asyncio.sleep(1)
             if time_to_move == 0:
                 current_room = member.voice.channel
-                await play_sound(current_room, "cogs/sounds/tzirman.mp3", 1)
+                await play_sound(current_room, f'{location}tzirman.mp3', 1)
                 time_to_move = 60
 
 
@@ -406,7 +406,7 @@ async def eletter(ctx, *, message: str = None):
 async def on_voice_state_update(member, before, after):
     if member.id == PAZRIM and before.channel is None \
             and after.channel is not None:
-        await play_sound(member.voice.channel, 'cogs/sounds/oh-no.mp3', 0.5)
+        await play_sound(member.voice.channel, f'{location}ohno.mp3', 0.5)
 
 
 bot.run(TOKEN)
