@@ -1,17 +1,16 @@
 # bot.py
 import asyncio
+import json
+import logging
 import os
 import random
-import discord
-import aiohttp
-import json
 import typing
-import logging
 
+import aiohttp
+import discord
+from discord.ext import commands
 from discord.ext.commands import BadArgument
 from dotenv import load_dotenv
-
-from discord.ext import commands
 
 from utils import play_sound, location
 
@@ -60,87 +59,6 @@ async def on_ready():
     print(f'{bot.user.name} has connected to Discord!')
     game = discord.Game(name="with my balls")
     await bot.change_presence(status=discord.Status.online, activity=game)
-
-
-"""
-@bot.event
-async def on_member_join(member):
-    await member.create_dm()
-    await member.dm_channel.send(
-        f'Hi {member.name}, welcome to my Discord server!'
-    )
-
-
-@bot.command(name='99', help='Responds with a random quote from Brooklyn 99')
-async def nine_nine(ctx):
-    brooklyn_99_quotes = [
-        'I\'m the human form of the 💯 emoji.',
-        'Bingpot!',
-        (
-            'Cool. Cool cool cool cool cool cool cool, '
-            'no doubt no doubt no doubt no doubt.'
-        ),
-    ]
-
-    response = random.choice(brooklyn_99_quotes)
-    await ctx.channel.send(response)
-
-
-@bot.event
-async def on_typing(channel, user, when):
-    if user.id == PAZRIM:
-        message = await channel.send(user.mention + ' STFU <:DansGame:525949909204205579>', delete_after=10)
-
-
-@bot.event
-async def on_member_update(before, after):
-    if str(before.status) == "offline" and before.id == PAZRIM:
-        if str(after.status) == "online" and before.id == PAZRIM:
-            guild = discord.utils.get(bot.guilds, name=GUILD)
-            role = guild.get_role(AGULEI_ROLE)
-            channel = bot.get_channel(GENERAL_CHANNEL)
-            await channel.send(role.mention + ' He has come <:monkaW:675062105996656640>')
-
-
-@bot.event
-async def on_voice_state_update(member, before, after):
-    if before.channel != after.channel and member.id == PAZRIM and isDefendOn:
-        guild = discord.utils.get(bot.guilds, name=GUILD)
-        channel_to_move = discord.utils.find(lambda c: c != after.channel, guild.voice_channels)
-
-        for member in after.channel.members:
-            if member.id != PAZRIM:
-                await member.move_to(channel_to_move)
-
-
-@bot.command(name='vanish', help='Moves every user but Pazrim to a secret voice channel')
-async def vanish(ctx):
-    guild = discord.utils.get(bot.guilds, name=GUILD)
-    escape_room = guild.get_channel(ESCAPE_ROOM)
-
-    lior = guild.get_member(PAZRIM)
-    if lior.voice is not None and lior.voice.channel is not None:
-        for member in lior.voice.channel.members:
-            if member.id != PAZRIM:
-                await member.move_to(escape_room)
-        await ctx.channel.send('Discord has vanished <:pepeLaugh:672820944166977546>')
-    else:
-        await ctx.channel.send('No reason to vanish 😔')
-
-
-@bot.command(name='defenceoff', help='Turns off Pazrims auto defence')
-async def pazrim_defend_off(ctx):
-    global isDefendOn
-    isDefendOn = False
-    await ctx.channel.send('Defense is off <:PepeHands:526494198858383361>')
-
-
-@bot.command(name='defenceon', help='Turns on Pazrims auto defence')
-async def pazrim_defend_on(ctx):
-    global isDefendOn
-    isDefendOn = True
-    await ctx.channel.send('Defense is on <:pepeLaugh:672820944166977546>')
-"""
 
 
 @bot.command(help='Picks a random gif from the top 10 results and posts it')
@@ -210,7 +128,8 @@ async def gen_teams(ctx):
     user_list = ctx.author.voice.channel.members
     display_name_list = []
     for member in user_list:
-        display_name_list.append(member.display_name)
+        if not member.bot:
+            display_name_list.append(member.display_name)
     num_users = len(display_name_list)
     random.shuffle(display_name_list)
     team_1 = ', '.join(display_name_list[:num_users // 2])
@@ -256,7 +175,6 @@ async def msg_stats(ctx, limit: typing.Optional[int] = None):
     for message in messages_sorted:
         embed.description += '{0}: {1}\n'.format(message[0], message[1])
     await ctx.channel.send(embed=embed)
-    pass
 
 
 @bot.event
@@ -273,7 +191,7 @@ async def on_voice_state_update(member, before, after):
             await asyncio.sleep(1)
             if time_to_move == 0:
                 current_room = member.voice.channel
-                await play_sound(current_room, f'{location}tzirman.mp3', 1)
+                await play_sound(bot, current_room, f'{location}tzirman.mp3', 1)
                 time_to_move = 60
 
 
@@ -406,7 +324,7 @@ async def eletter(ctx, *, message: str = None):
 async def on_voice_state_update(member, before, after):
     if member.id == PAZRIM and before.channel is None \
             and after.channel is not None:
-        await play_sound(member.voice.channel, f'{location}ohno.mp3', 0.5)
+        await play_sound(bot, member.voice.channel, f'{location}ohno.mp3', 0.5)
 
 
 bot.run(TOKEN)

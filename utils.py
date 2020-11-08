@@ -1,8 +1,8 @@
 import asyncio
-import pickle
 import re
 import discord
 import os
+import pickle5 as pickle
 
 from dotenv import load_dotenv
 
@@ -44,7 +44,6 @@ def get_filename_from_cd(cd):
 def save_obj(obj, name):
     with open('obj/' + name + '.pkl', 'wb') as f:
         pickle.dump(obj, f, pickle.HIGHEST_PROTOCOL)
-        f.close()
 
 
 def load_obj(name):
