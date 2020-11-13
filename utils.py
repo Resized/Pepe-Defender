@@ -19,7 +19,7 @@ async def play_sound(bot, channel, sound_clip, volume=1.0):
     except discord.ClientException:
         voice_client = bot.voice_clients[0]
         to_disconnect = False
-    audio_source = discord.FFmpegPCMAudio(executable=FFMPEG, source=sound_clip)
+    audio_source = discord.FFmpegPCMAudio(source=sound_clip)
     audio_source = discord.PCMVolumeTransformer(audio_source, volume)
     voice_client.play(audio_source)
     while voice_client.is_playing():

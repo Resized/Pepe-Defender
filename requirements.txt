@@ -7,6 +7,7 @@ chardet==3.0.4
 colorama==0.4.3
 discord.py==1.4.1
 ffmpeg-python==0.2.0
+ffmpeg
 future==0.18.2
 idna==2.10
 isort==5.4.2
