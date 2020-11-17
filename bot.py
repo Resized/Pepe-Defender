@@ -181,8 +181,12 @@ async def msg_stats(ctx, limit: typing.Optional[int] = None):
 
 
 @bot.event
-async def on_voice_state_update(member, before, after):
-    time_to_move = 30
+async def on_voice_state_update(member: discord.Member, before, after):
+    if member.id == PAZRIM and before.channel is None \
+            and after.channel is not None:
+        await play_sound(bot, member.voice.channel, f'{location}ohno.mp3', 0.5)
+        return
+    time_to_move = 60
     game_list = ["VALORANT", "Counter-Strike: Global Offensive"]
     if member.id == BENCHUK and before.self_mute is False and after.self_mute is True \
             and before.self_deaf is False and after.self_deaf is False and member.activity \
@@ -192,10 +196,10 @@ async def on_voice_state_update(member, before, after):
                 return
             time_to_move -= 1
             await asyncio.sleep(1)
-            if time_to_move == 0:
+            if time_to_move <= 0:
                 current_room = member.voice.channel
                 await play_sound(bot, current_room, f'{location}tzirman.mp3', 1)
-                time_to_move = 60
+                return
 
 
 @bot.event
@@ -321,13 +325,6 @@ async def eletter(ctx, *, message: str = None):
             letter_to_add = ord(letter.lower()) - ord(first_letter)
             translated += regional_letters[letter_to_add] + ' '
     await ctx.channel.send(translated)
-
-
-@bot.event
-async def on_voice_state_update(member, before, after):
-    if member.id == PAZRIM and before.channel is None \
-            and after.channel is not None:
-        await play_sound(bot, member.voice.channel, f'{location}ohno.mp3', 0.5)
 
 
 bot.run(TOKEN)
