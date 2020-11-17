@@ -1,0 +1,6 @@
+/ffmpeg/
+/ffmpeg.exe
+/run_bot.bat
+/.env
+/venv/
+/cogs/deletedsounds/
