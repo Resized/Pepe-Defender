@@ -30,7 +30,10 @@ ESCAPE_ROOM = int(os.getenv('ESCAPE_ROOM'))
 FFMPEG = os.getenv('FFMPEG_LOCATION')
 isDefendOn = False
 
-bot = commands.Bot(command_prefix='!', case_insensitive=True)
+intents = discord.Intents.all()
+intents.members = True
+
+bot = commands.Bot(command_prefix='!', case_insensitive=True, intents=intents)
 
 
 @bot.command()
