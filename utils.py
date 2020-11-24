@@ -9,7 +9,8 @@ from dotenv import load_dotenv
 load_dotenv()
 
 FFMPEG = os.getenv('FFMPEG_LOCATION')
-location = 'cogs/sounds/'
+sounds_location = 'sounds/'
+obj_location = 'obj/'
 
 
 async def play_sound(bot, channel, sound_clip, volume=1.0):

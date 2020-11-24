@@ -12,7 +12,7 @@ from discord.ext import commands
 from discord.ext.commands import BadArgument
 from dotenv import load_dotenv
 
-from utils import play_sound, location
+from utils import play_sound, sounds_location
 
 load_dotenv()
 logging.basicConfig(level=logging.WARNING)
@@ -191,7 +191,7 @@ async def msg_stats(ctx, limit: typing.Optional[int] = None):
 async def on_voice_state_update(member: discord.Member, before, after):
     if member.id == PAZRIM and before.channel is None \
             and after.channel is not None:
-        await play_sound(bot, member.voice.channel, f'{location}ohno.mp3', 0.5)
+        await play_sound(bot, member.voice.channel, f'{sounds_location}ohno.mp3', 0.5)
         return
     time_to_move = 60
     game_list = ["VALORANT", "Counter-Strike: Global Offensive"]
@@ -205,7 +205,7 @@ async def on_voice_state_update(member: discord.Member, before, after):
             await asyncio.sleep(1)
             if time_to_move <= 0:
                 current_room = member.voice.channel
-                await play_sound(bot, current_room, f'{location}tzirman.mp3', 1)
+                await play_sound(bot, current_room, f'{sounds_location}tzirman.mp3', 1)
                 return
 
 

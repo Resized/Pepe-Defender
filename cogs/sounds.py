@@ -7,7 +7,7 @@ import boto3
 
 from discord.ext import commands
 
-from utils import play_sound, save_obj_s3, get_filename_from_cd, load_obj_s3
+from utils import play_sound, save_obj_s3, get_filename_from_cd, load_obj_s3, sounds_location, obj_location
 
 AWS_DEFAULT_REGION = os.getenv('AWS_DEFAULT_REGION')
 AWS_ACCESS_KEY_ID = os.getenv('AWS_ACCESS_KEY_ID')
@@ -16,8 +16,6 @@ S3_BUCKET = os.getenv('S3_BUCKET')
 
 
 class Sounds(commands.Cog):
-    sounds_location = 'sounds/'
-    obj_location = 'obj/'
     clips_volume = dict()
     clips_usage = dict()
 
@@ -31,19 +29,19 @@ class Sounds(commands.Cog):
         )
 
         try:
-            if not os.path.exists(f'{self.sounds_location}'):
-                os.mkdir(f'{self.sounds_location}')
+            if not os.path.exists(f'{sounds_location}'):
+                os.mkdir(f'{sounds_location}')
         except OSError:
-            print(f"Creation of the directory {self.sounds_location} failed")
+            print(f"Creation of the directory {sounds_location} failed")
 
         try:
-            if not os.path.exists(f'{self.obj_location}'):
-                os.mkdir(f'{self.obj_location}')
+            if not os.path.exists(f'{obj_location}'):
+                os.mkdir(f'{obj_location}')
         except OSError:
-            print(f"Creation of the directory {self.obj_location} failed")
+            print(f"Creation of the directory {obj_location} failed")
 
         # download all missing sound clips from s3 cloud
-        for sound_clip in self.s3.Bucket(S3_BUCKET).objects.filter(Prefix=self.sounds_location):
+        for sound_clip in self.s3.Bucket(S3_BUCKET).objects.filter(Prefix=sounds_location):
             if not os.path.exists(f'{sound_clip.key}') and sound_clip.key.split('/')[-1]:
                 try:
                     self.s3.Bucket(S3_BUCKET).download_file(f'{sound_clip.key}', f'{sound_clip.key}')
@@ -63,17 +61,17 @@ class Sounds(commands.Cog):
     @commands.command(name='clip', help='Plays a sound clip')
     async def clip(self, ctx, filename, volume: float = 1.0):
         volume = min(1.0, volume)
-        sound_clip = f'{self.sounds_location}{filename}.mp3'
+        sound_clip = f'{sounds_location}{filename}.mp3'
         if filename in self.clips_volume.keys():
             volume *= self.clips_volume.get(filename)
         if filename == 'fart':
             fart_clips = []
-            for fname in os.listdir(self.sounds_location):
+            for fname in os.listdir(sounds_location):
                 if fname.startswith('fart'):
                     fart_clips.append(fname)
             selected_clip = random.choice(fart_clips)
-            sound_clip = f'{self.sounds_location}{selected_clip}'
-        if sound_clip.split("/")[-1] not in os.listdir(self.sounds_location):
+            sound_clip = f'{sounds_location}{selected_clip}'
+        if sound_clip.split("/")[-1] not in os.listdir(sounds_location):
             await ctx.channel.send(f'{filename} clip was not found.')
             return
         current_room = ctx.message.author.voice.channel
@@ -85,7 +83,7 @@ class Sounds(commands.Cog):
     async def clips(self, ctx):
         embed = discord.Embed(title='Available sound clips:', colour=discord.Colour.blue())
         available_clips = []
-        for filename in os.listdir(self.sounds_location):
+        for filename in os.listdir(sounds_location):
             if filename.endswith('.mp3'):
                 if not filename.startswith('fart'):
                     available_clips.append(filename[:-4])
@@ -111,8 +109,8 @@ class Sounds(commands.Cog):
             return
         try:
             print(filename)
-            open(self.sounds_location + filename, 'wb').write(r.content)
-            self.s3.Bucket(S3_BUCKET).upload_file(f'{self.sounds_location}{filename}',
+            open(sounds_location + filename, 'wb').write(r.content)
+            self.s3.Bucket(S3_BUCKET).upload_file(f'{sounds_location}{filename}',
                                                   f'sounds/{filename}')
             await ctx.channel.send(f'{filename[:-4]} has been added to sound clips.')
         except OSError:
@@ -120,17 +118,17 @@ class Sounds(commands.Cog):
 
     @commands.command(name='removeclip', help='Removes a clip')
     async def removeclip(self, ctx, clipname):
-        if (clipname + '.mp3').lower() in os.listdir(self.sounds_location):
-            os.replace(rf'{self.sounds_location}{clipname}.mp3', rf'cogs/deletedsounds/{clipname}.mp3')
-            self.s3.Object(S3_BUCKET, f'{self.sounds_location}{clipname}.mp3').delete()
+        if (clipname + '.mp3').lower() in os.listdir(sounds_location):
+            os.replace(rf'{sounds_location}{clipname}.mp3', rf'cogs/deletedsounds/{clipname}.mp3')
+            self.s3.Object(S3_BUCKET, f'{sounds_location}{clipname}.mp3').delete()
             await ctx.channel.send(f'{clipname} has been removed.')
 
     @commands.command(name='renameclip', help='Renames a clip')
     async def renameclip(self, ctx, clipname: str, newname: str):
-        if (clipname + '.mp3').lower() in os.listdir(self.sounds_location):
-            os.rename(rf'{self.sounds_location}{clipname}.mp3', rf'{self.sounds_location}{newname}.mp3')
-            self.s3.Object(S3_BUCKET, f'{self.sounds_location}{newname}.mp3').copy_from(CopySource=f'{S3_BUCKET}/{self.sounds_location}{clipname}.mp3')
-            self.s3.Object(S3_BUCKET, f'{self.sounds_location}{clipname}.mp3').delete()
+        if (clipname + '.mp3').lower() in os.listdir(sounds_location):
+            os.rename(rf'{sounds_location}{clipname}.mp3', rf'{sounds_location}{newname}.mp3')
+            self.s3.Object(S3_BUCKET, f'{sounds_location}{newname}.mp3').copy_from(CopySource=f'{S3_BUCKET}/{sounds_location}{clipname}.mp3')
+            self.s3.Object(S3_BUCKET, f'{sounds_location}{clipname}.mp3').delete()
             self.clips_usage[newname] = self.clips_usage.pop(clipname)
             self.clips_volume[newname] = self.clips_volume.pop(clipname, 1)
             save_obj_s3(self.clips_usage, 'clips_usage', self.s3.Bucket(S3_BUCKET))
@@ -143,7 +141,7 @@ class Sounds(commands.Cog):
     @commands.command(name='setvolume', help='Set clip volume')
     async def setvolume(self, ctx, clipname: str, volume: float):
         previous_volume = self.clips_volume.get(clipname, 1.0)
-        if (clipname + '.mp3').lower() in os.listdir(self.sounds_location):
+        if (clipname + '.mp3').lower() in os.listdir(sounds_location):
             if 1.0 >= volume >= 0.0:
                 self.clips_volume[clipname] = volume
                 save_obj_s3(self.clips_volume, 'clips_volume', self.s3.Bucket(S3_BUCKET))
