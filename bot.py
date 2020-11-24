@@ -28,6 +28,12 @@ GENERAL_CHANNEL = int(os.getenv('GENERAL_CHANNEL'))
 AGULEI_ROLE = int(os.getenv('AGULEI_ROLE'))
 ESCAPE_ROOM = int(os.getenv('ESCAPE_ROOM'))
 FFMPEG = os.getenv('FFMPEG_LOCATION')
+S3_BUCKET = os.getenv('S3_BUCKET')
+AWS_DEFAULT_REGION = os.getenv('AWS_DEFAULT_REGION')
+AWS_ACCESS_KEY_ID = os.getenv('AWS_ACCESS_KEY_ID')
+AWS_SECRET_ACCESS_KEY = os.getenv('AWS_SECRET_ACCESS_KEY')
+
+
 isDefendOn = False
 
 intents = discord.Intents.all()
@@ -61,6 +67,7 @@ for filename in os.listdir('./cogs'):
 async def on_ready():
     print(f'{bot.user.name} has connected to Discord!')
     game = discord.Game(name="with my balls")
+
     await bot.change_presence(status=discord.Status.online, activity=game)
 
 

@@ -46,6 +46,16 @@ def save_obj(obj, name):
         pickle.dump(obj, f, pickle.HIGHEST_PROTOCOL)
 
 
+def save_obj_s3(obj, name, bucket):
+    save_obj(obj, name)
+    bucket.upload_file(f'obj/clips_usage.pkl', f'obj/clips_usage.pkl')
+
+
 def load_obj(name):
     with open('obj/' + name + '.pkl', 'rb') as f:
         return pickle.load(f)
+
+
+def load_obj_s3(name, bucket):
+    bucket.download_file(f'obj/clips_usage.pkl', f'obj/clips_usage.pkl')
+    return load_obj(name)
