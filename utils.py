@@ -42,20 +42,20 @@ def get_filename_from_cd(cd):
 
 
 def save_obj(obj, name):
-    with open('obj/' + name + '.pkl', 'wb') as f:
+    with open(f'obj/{name}.pkl', 'wb') as f:
         pickle.dump(obj, f, pickle.HIGHEST_PROTOCOL)
 
 
 def save_obj_s3(obj, name, bucket):
     save_obj(obj, name)
-    bucket.upload_file(f'obj/clips_usage.pkl', f'obj/clips_usage.pkl')
+    bucket.upload_file(f'obj/{name}.pkl', f'obj/{name}.pkl')
 
 
 def load_obj(name):
-    with open('obj/' + name + '.pkl', 'rb') as f:
+    with open(f'obj/{name}.pkl', 'rb') as f:
         return pickle.load(f)
 
 
 def load_obj_s3(name, bucket):
-    bucket.download_file(f'obj/clips_usage.pkl', f'obj/clips_usage.pkl')
+    bucket.download_file(f'obj/{name}.pkl', f'obj/{name}.pkl')
     return load_obj(name)
