@@ -10,6 +10,7 @@ load_dotenv()
 
 FFMPEG = os.getenv('FFMPEG_LOCATION')
 MAX_MP3_LENGTH = 5
+MAX_MP3_SIZE = 500000
 sounds_location = 'sounds/'
 obj_location = 'obj/'
 

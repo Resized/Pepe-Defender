@@ -9,7 +9,7 @@ from mutagen.mp3 import MP3
 from discord.ext import commands
 
 from utils import play_sound, save_obj_s3, get_filename_from_cd, load_obj_s3, sounds_location, obj_location, \
-    MAX_MP3_LENGTH
+    MAX_MP3_LENGTH, MAX_MP3_SIZE
 
 AWS_DEFAULT_REGION = os.getenv('AWS_DEFAULT_REGION')
 AWS_ACCESS_KEY_ID = os.getenv('AWS_ACCESS_KEY_ID')
@@ -95,12 +95,12 @@ class Sounds(commands.Cog):
         embed.description = description
         await ctx.channel.send(embed=embed)
 
-    @commands.command(name='addclip', help='Add sound clip (mp3 < 250kb)')
+    @commands.command(name='addclip', help=f'Add sound clip (mp3 < {MAX_MP3_SIZE/1000}kb)')
     async def addclip(self, ctx):
         attachment_url = ctx.message.attachments[0].url
         r = requests.get(attachment_url, allow_redirects=True)
-        if int(r.headers.get('content-length')) > 250000:
-            await ctx.channel.send('File is too heavy (over 250kb)')
+        if int(r.headers.get('content-length')) > MAX_MP3_SIZE:
+            await ctx.channel.send(f'File is too heavy (over {MAX_MP3_SIZE/1000}kb)')
             return
         elif r.headers.get('content-type') != 'audio/mpeg':
             await ctx.channel.send('File is not an mp3.')
