@@ -4,10 +4,12 @@ import random
 import discord
 import requests
 import boto3
+from mutagen.mp3 import MP3
 
 from discord.ext import commands
 
-from utils import play_sound, save_obj_s3, get_filename_from_cd, load_obj_s3, sounds_location, obj_location
+from utils import play_sound, save_obj_s3, get_filename_from_cd, load_obj_s3, sounds_location, obj_location, \
+    MAX_MP3_LENGTH
 
 AWS_DEFAULT_REGION = os.getenv('AWS_DEFAULT_REGION')
 AWS_ACCESS_KEY_ID = os.getenv('AWS_ACCESS_KEY_ID')
@@ -110,18 +112,23 @@ class Sounds(commands.Cog):
         try:
             print(filename)
             open(sounds_location + filename, 'wb').write(r.content)
+            audio = MP3(sounds_location + filename)
+            if audio.info.length > MAX_MP3_LENGTH:
+                await ctx.channel.send(f'❌ `{filename}` exceeds {MAX_MP3_LENGTH} seconds and has not be added. ')
+                os.remove(sounds_location + filename)
+                return
             self.s3.Bucket(S3_BUCKET).upload_file(f'{sounds_location}{filename}',
                                                   f'sounds/{filename}')
-            await ctx.channel.send(f'{filename[:-4]} has been added to sound clips.')
+            await ctx.channel.send(f'✅ {filename[:-4]} has been added to sound clips.')
         except OSError:
-            await ctx.channel.send(f'An error occurred, {filename} has not be added. ')
+            await ctx.channel.send(f'❌ An error occurred, {filename} has not be added. ')
 
     @commands.command(name='removeclip', help='Removes a clip')
     async def removeclip(self, ctx, clipname):
         if (clipname + '.mp3').lower() in os.listdir(sounds_location):
             os.replace(rf'{sounds_location}{clipname}.mp3', rf'cogs/deletedsounds/{clipname}.mp3')
             self.s3.Object(S3_BUCKET, f'{sounds_location}{clipname}.mp3').delete()
-            await ctx.channel.send(f'{clipname} has been removed.')
+            await ctx.channel.send(f'`{clipname}` has been removed.')
 
     @commands.command(name='renameclip', help='Renames a clip')
     async def renameclip(self, ctx, clipname: str, newname: str):
@@ -134,9 +141,9 @@ class Sounds(commands.Cog):
             save_obj_s3(self.clips_usage, 'clips_usage', self.s3.Bucket(S3_BUCKET))
             save_obj_s3(self.clips_volume, 'clips_volume', self.s3.Bucket(S3_BUCKET))
 
-            await ctx.channel.send(f'{clipname} has been changed to {newname}.')
+            await ctx.channel.send(f'✅ `{clipname}` has been changed to `{newname}`.')
         else:
-            await ctx.channel.send(f'{clipname} was not found.')
+            await ctx.channel.send(f'❌ `{clipname}` was not found.')
 
     @commands.command(name='setvolume', help='Set clip volume')
     async def setvolume(self, ctx, clipname: str, volume: float):

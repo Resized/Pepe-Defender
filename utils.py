@@ -9,6 +9,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 FFMPEG = os.getenv('FFMPEG_LOCATION')
+MAX_MP3_LENGTH = 5
 sounds_location = 'sounds/'
 obj_location = 'obj/'
 
