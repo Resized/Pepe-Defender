@@ -4,6 +4,7 @@ import random
 import discord
 import requests
 import boto3
+import botocore.exceptions
 from mutagen.mp3 import MP3
 
 from discord.ext import commands
@@ -114,19 +115,26 @@ class Sounds(commands.Cog):
             open(sounds_location + filename, 'wb').write(r.content)
             audio = MP3(sounds_location + filename)
             if audio.info.length > MAX_MP3_LENGTH:
-                await ctx.channel.send(f'❌ `{filename}` exceeds {MAX_MP3_LENGTH} seconds and has not be added. ')
+                await ctx.channel.send(f'❌ `{filename}` exceeds `{MAX_MP3_LENGTH}` seconds and has not be added. ')
                 os.remove(sounds_location + filename)
                 return
             self.s3.Bucket(S3_BUCKET).upload_file(f'{sounds_location}{filename}',
                                                   f'sounds/{filename}')
-            await ctx.channel.send(f'✅ {filename[:-4]} has been added to sound clips.')
+            await ctx.channel.send(f'✅ `{filename[:-4]}` has been added to sound clips.')
         except OSError:
-            await ctx.channel.send(f'❌ An error occurred, {filename} has not be added. ')
+            await ctx.channel.send(f'❌ An error occurred, `{filename[:-4]}` has not be added.')
 
     @commands.command(name='removeclip', help='Removes a clip')
     async def removeclip(self, ctx, clipname):
-        if (clipname + '.mp3').lower() in os.listdir(sounds_location):
-            os.replace(rf'{sounds_location}{clipname}.mp3', rf'cogs/deletedsounds/{clipname}.mp3')
+        try:
+            self.s3.Object(S3_BUCKET, f'{clipname}.mp3').load()
+        except botocore.exceptions.ClientError as e:
+            if e.response['Error']['Code'] == "404":
+                await ctx.channel.send(f'❌ An error occurred, `{clipname}` was not found.')
+            else:
+                await ctx.channel.send(f'❌ An error occurred.')
+        else:
+            os.remove(f'{sounds_location}{clipname}.mp3')
             self.s3.Object(S3_BUCKET, f'{sounds_location}{clipname}.mp3').delete()
             await ctx.channel.send(f'`{clipname}` has been removed.')
 
