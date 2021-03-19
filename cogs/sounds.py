@@ -64,34 +64,50 @@ class Sounds(commands.Cog):
     @commands.command(name='clip', help='Plays a sound clip')
     async def clip(self, ctx, filename, volume: float = 1.0):
         volume = min(1.0, volume)
-        sound_clip = f'{sounds_location}{filename}.mp3'
+        available_clips = os.listdir(sounds_location)
         if filename in self.clips_volume.keys():
             volume *= self.clips_volume.get(filename)
+        found_clip = [i for i in available_clips if filename.split("/")[-1] in i]
         if filename == 'fart':
             fart_clips = []
-            for fname in os.listdir(sounds_location):
+            for fname in available_clips:
                 if fname.startswith('fart'):
                     fart_clips.append(fname)
             selected_clip = random.choice(fart_clips)
-            sound_clip = f'{sounds_location}{selected_clip}'
-        if sound_clip.split("/")[-1] not in os.listdir(sounds_location):
+            found_clip = [f'{selected_clip}']
+        if len(found_clip) != 1:
+            if len(found_clip) > 1:
+                clips_matching = ''
+                for clip in found_clip:
+                    clips_matching += f'`{clip.split(".")[0]}` '
+                await ctx.channel.send(f'{clips_matching} matches `{filename}`, pick one.')
+                return
             await ctx.channel.send(f'{filename} clip was not found.')
             return
+        filename = found_clip[0].split(".")[0]
         current_room = ctx.message.author.voice.channel
-        await play_sound(self.bot, current_room, sound_clip, volume)
+        await play_sound(self.bot, current_room, f'{sounds_location}{found_clip[0]}', volume)
         self.clips_usage[filename] = self.clips_usage.get(filename, 0) + 1
         save_obj_s3(self.clips_usage, 'clips_usage', self.s3.Bucket(S3_BUCKET))
 
     @commands.command(name='clips', help='Shows available sound clips')
-    async def clips(self, ctx):
-        embed = discord.Embed(title='Available sound clips:', colour=discord.Colour.blue())
+    async def clips(self, ctx, filename_to_find=None):
+        if filename_to_find:
+            embed = discord.Embed(title=f'Available sound clips with \'{filename_to_find}\' substring:',
+                                  colour=discord.Colour.blue())
+        else:
+            embed = discord.Embed(title='Available sound clips:', colour=discord.Colour.blue())
         available_clips = []
         for filename in os.listdir(sounds_location):
             if filename.endswith('.mp3'):
                 if not filename.startswith('fart'):
                     available_clips.append(filename[:-4])
         available_clips.append('fart')
-        description = ', '.join(sorted(available_clips))
+        if filename_to_find:
+            final_clips = [i for i in available_clips if filename_to_find in i]
+        else:
+            final_clips = available_clips
+        description = ', '.join(sorted(final_clips))
         description += '.'
         embed.description = description
         await ctx.channel.send(embed=embed)
