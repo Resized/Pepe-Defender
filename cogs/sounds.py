@@ -67,7 +67,13 @@ class Sounds(commands.Cog):
         available_clips = os.listdir(sounds_location)
         if filename in self.clips_volume.keys():
             volume *= self.clips_volume.get(filename)
-        found_clip = [i for i in available_clips if filename.split("/")[-1] in i]
+        found_clip = []
+        for clip_name in available_clips:
+            if filename == clip_name.split(".")[0]:
+                found_clip = [clip_name]
+                break
+            elif filename in clip_name.split(".")[0]:
+                found_clip.append(clip_name)
         if filename == 'fart':
             fart_clips = []
             for fname in available_clips:
@@ -78,8 +84,8 @@ class Sounds(commands.Cog):
         if len(found_clip) != 1:
             if len(found_clip) > 1:
                 clips_matching = ''
-                for clip in found_clip:
-                    clips_matching += f'`{clip.split(".")[0]}` '
+                for clip_name in found_clip:
+                    clips_matching += f'`{clip_name.split(".")[0]}` '
                 await ctx.channel.send(f'{clips_matching} matches `{filename}`, pick one.')
                 return
             await ctx.channel.send(f'{filename} clip was not found.')
