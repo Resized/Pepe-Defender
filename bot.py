@@ -141,9 +141,16 @@ async def gen_teams(ctx, *usernames):
     users_to_omit = []
     for member in usernames:
         users_to_omit.append(member[1:])
+
     for member in user_list:
-        if not member.bot and member.display_name.lower() not in users_to_omit:
+        if not member.bot:
             display_name_list.append(member.display_name)
+        if users_to_omit:
+            for user_substring in users_to_omit:
+                if user_substring.lower() in member.display_name.lower():
+                    display_name_list = display_name_list[:-1]
+                    break
+
     num_users = len(display_name_list)
     random.shuffle(display_name_list)
     team_1 = ', '.join(display_name_list[:num_users // 2])
