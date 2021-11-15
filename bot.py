@@ -5,6 +5,7 @@ import logging
 import os
 import random
 import typing
+import re
 
 import aiohttp
 import discord
@@ -132,13 +133,16 @@ async def message_clear(ctx, amount: typing.Optional[int] = 1, username=''):
             ctx.message.author.name + ' successfully removed ' + username + "'s last " + str(counter) + ' messages.')
 
 
-@bot.command(name='teams', help='Generate 2 random teams for uses in voice channel')
-async def gen_teams(ctx):
+@bot.command(name='teams', help='Generate 2 random teams for uses in voice channel (Use \'-member)\' to omit)')
+async def gen_teams(ctx, *usernames):
     embed = discord.Embed(title='Team Generator', colour=discord.Colour.blue())
     user_list = ctx.author.voice.channel.members
     display_name_list = []
+    users_to_omit = []
+    for member in usernames:
+        users_to_omit.append(member[1:])
     for member in user_list:
-        if not member.bot:
+        if not member.bot and member.display_name.lower() not in users_to_omit:
             display_name_list.append(member.display_name)
     num_users = len(display_name_list)
     random.shuffle(display_name_list)
