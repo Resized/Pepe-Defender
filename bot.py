@@ -278,18 +278,20 @@ async def eight_ball(ctx: commands.Context, *, message: str = None) -> None:
     await ctx.send(final_answer)
 
 
-@bot.tree.command(name='join', description='Join current voice channel')
+@bot.hybrid_command(name='join', description='Join current voice channel')
 async def join(ctx: commands.Context) -> VoiceProtocol | Any:
     guild = ctx.guild
     author: discord.Member = ctx.author
     voice_protocol: discord.VoiceProtocol = guild.voice_client
     channel: discord.VoiceChannel = author.voice.channel
     if not voice_protocol:
-        vc = await channel.connect()
-        return vc
+        await ctx.reply(f'Connecting to voice channel: {channel.name}')
+        return await channel.connect()
     elif voice_protocol.channel != channel:
         await voice_protocol.disconnect(force=True)
+        await ctx.reply(f'Connecting to voice channel: {channel.name}')
         return await channel.connect()
+    await ctx.send(content='Already connected to voice channel', ephemeral=True)
     return voice_protocol
 
 
@@ -298,6 +300,7 @@ async def leave(ctx: commands.Context):
     guild = ctx.guild
     voice_client: discord.VoiceProtocol = guild.voice_client
     if voice_client:
+        await ctx.reply(f'Disconnecting from voice channel: {voice_client.channel}')
         await voice_client.disconnect(force=True)
 
 
@@ -305,6 +308,7 @@ async def leave(ctx: commands.Context):
 async def wave(ctx: commands.Context, *, text: str = None):
     if text is None:
         return
+    text += ' '
     message = await ctx.send(text)
     for i in range(1, len(text) + 1):
         new_text = text[i:]
