@@ -7,12 +7,12 @@ from PIL import Image, ImageDraw, ImageFont, ImageFilter
 class Images(commands.Cog):
     location = 'cogs/images/'
 
-    def __init__(self, bot):
+    def __init__(self, bot: commands.Bot):
         self.bot = bot
 
-    @commands.command(name='mask', help='Why do you wear that mask?')
-    async def mask(self, ctx, *, member: discord.Member):
-        await member.avatar_url_as(format='jpg', size=128).save(f'{self.location}avatar.jpg')
+    @commands.hybrid_command(name='mask', description='Why do you wear that mask?')
+    async def mask(self, ctx: commands.Context, *, member: discord.Member):
+        await member.display_avatar.with_size(128).with_format('jpg').save(f'{self.location}avatar.jpg')
 
         im1 = Image.open(f'{self.location}mask.jpg')
         im2 = Image.open(f'{self.location}avatar.jpg')
@@ -23,15 +23,15 @@ class Images(commands.Cog):
 
         file = discord.File(f'{self.location}mask_final.jpg', filename='mask_final.jpg')
 
-        await ctx.channel.send(file=file)
+        await ctx.send(file=file)
 
-    @commands.command(name='adolf', help='Why do you wear that mask?')
-    async def adolf(self, ctx, *, member: discord.Member):
+    @commands.hybrid_command(name='adolf', description='Why do you wear that mask?')
+    async def adolf(self, ctx: commands.Context, *, member: discord.Member):
         if ctx.message.attachments:
             attachment_url = ctx.message.attachments[0].url
             file_request = requests.get(attachment_url)
 
-        await member.avatar_url_as(format='jpg', size=64).save(f'{self.location}avatar.jpg')
+        await member.display_avatar.with_size(64).with_format('jpg').save(f'{self.location}avatar.jpg')
 
         im1 = Image.open(f'{self.location}adolf.jpg')
         im2 = Image.open(f'{self.location}avatar.jpg')
@@ -42,14 +42,13 @@ class Images(commands.Cog):
 
         file = discord.File(f'{self.location}adolf_final.jpg', filename='adolf_final.jpg')
 
-        await ctx.channel.send(file=file)
+        await ctx.send(file=file)
 
-    @commands.command(name='whiteboard', help='Why do you wear that mask?')
-    async def whiteboard(self, ctx, *, text: str):
+    @commands.hybrid_command(name='whiteboard', description='Why do you wear that mask?')
+    async def whiteboard(self, ctx: commands.Context, *, text: str):
         im1 = Image.open(f'{self.location}whiteboard.jpg')
         im2 = Image.open(f'{self.location}whiteboard.jpg')
         mask = Image.open(f'{self.location}whiteboard_mask.jpg').convert('L').resize(im1.size)
-        text_length = len(text)
         fontname = f'{self.location}fonts/DryWhiteboardMarker-Regular.ttf'
         draw = ImageDraw.Draw(im1)
         lines, font = text_wrap(text, fontname, 350, 260)
@@ -66,7 +65,7 @@ class Images(commands.Cog):
 
         file = discord.File(f'{self.location}whiteboard_final.jpg', filename='whiteboard_final.jpg')
 
-        await ctx.channel.send(file=file)
+        await ctx.send(file=file)
 
 
 def text_wrap(text, fontname, max_width, max_height):
@@ -118,5 +117,5 @@ def text_wrap(text, fontname, max_width, max_height):
     return lines, font
 
 
-def setup(bot):
-    bot.add_cog(Images(bot))
+async def setup(bot):
+    await bot.add_cog(Images(bot))

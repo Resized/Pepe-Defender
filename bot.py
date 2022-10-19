@@ -6,9 +6,11 @@ import os
 import random
 import typing
 import re
+from typing import Any
 
 import aiohttp
 import discord
+from discord import app_commands, VoiceProtocol
 from discord.ext import commands
 from discord.ext.commands import BadArgument
 from dotenv import load_dotenv
@@ -34,34 +36,30 @@ AWS_DEFAULT_REGION = os.getenv('AWS_DEFAULT_REGION')
 AWS_ACCESS_KEY_ID = os.getenv('AWS_ACCESS_KEY_ID')
 AWS_SECRET_ACCESS_KEY = os.getenv('AWS_SECRET_ACCESS_KEY')
 
-
 isDefendOn = False
 
 intents = discord.Intents.all()
 intents.members = True
-
 bot = commands.Bot(command_prefix='!', case_insensitive=True, intents=intents)
 
 
-@bot.command()
-async def load(ctx, extension):
-    bot.load_extension(f'cogs.{extension}')
+@bot.hybrid_command(description='Loads a given extension.')
+async def load(ctx: commands.Context, extension):
+    await bot.load_extension(f'cogs.{extension}')
 
 
-@bot.command()
-async def unload(ctx, extension):
-    bot.unload_extension(f'cogs.{extension}')
+@bot.hybrid_command(description='Unloads a given extension.')
+async def unload(ctx: commands.Context, extension):
+    await bot.unload_extension(f'cogs.{extension}')
 
 
-@bot.command()
-async def reload(ctx, extension):
-    bot.unload_extension(f'cogs.{extension}')
-    bot.load_extension(f'cogs.{extension}')
-
-
-for filename in os.listdir('./cogs'):
-    if filename.endswith('.py'):
-        bot.load_extension(f'cogs.{filename[:-3]}')
+@bot.hybrid_command(description='Reloads a given extension.')
+async def reload(ctx: commands.Context, extension):
+    await bot.unload_extension(f'cogs.{extension}')
+    await bot.load_extension(f'cogs.{extension}')
+    for filename in os.listdir('./cogs'):
+        if filename.endswith('.py'):
+            await bot.load_extension(f'cogs.{filename[:-3]}')
 
 
 @bot.event
@@ -70,10 +68,17 @@ async def on_ready():
     game = discord.Game(name="with my balls")
 
     await bot.change_presence(status=discord.Status.online, activity=game)
+    await bot.tree.sync(guild=discord.Object(id=GUILD))
 
 
-@bot.command(help='Picks a random gif from the top 10 results and posts it')
-async def giphy(ctx, *, search=None):
+@bot.command(name='sync', description='Syncs slash commands')
+async def sync(ctx: commands.Context):
+    await ctx.send('Syncing slash commands')
+    await bot.tree.sync(guild=discord.Object(id=GUILD))
+
+
+@bot.hybrid_command(description='Picks a random gif from the top 10 results and posts it')
+async def giphy(ctx: commands.Context, *, search=None):
     embed = discord.Embed(colour=discord.Colour.blue())
     session = aiohttp.ClientSession()
 
@@ -91,25 +96,26 @@ async def giphy(ctx, *, search=None):
         if total_results < 10:
             max_rand = total_results
         if total_results <= 0:
-            await ctx.channel.send('No GIFs found for ' + search)
+            await ctx.send('No GIFs found for ' + search)
             await session.close()
             return
         gif_choice = random.randint(0, max_rand - 1)
         embed.set_image(url=data['data'][gif_choice]['images']['original']['url'])
 
     await session.close()
-    await ctx.channel.send(embed=embed)
+    await ctx.send(embed=embed)
 
 
-@bot.command(name='clear', help='Clears last messages out of 20 (can specify by specific user)')
-async def message_clear(ctx, amount: typing.Optional[int] = 1, username=''):
+@bot.hybrid_command(name='clear', description='Clears last messages out of 20 (can specify by specific user)',
+                    guild_ids=[GUILD], with_app_command=True)
+async def message_clear(ctx: commands.Context, amount: typing.Optional[int] = 1, username=''):
     user = ''
     counter = 0
     if username != '':
         try:
             user = await commands.MemberConverter().convert(ctx, username)
         except BadArgument:
-            await ctx.channel.send('Found no user named ' + username)
+            await ctx.send('Found no user named ' + username)
             return
     await ctx.message.delete()
     messages_to_delete = []
@@ -127,14 +133,14 @@ async def message_clear(ctx, amount: typing.Optional[int] = 1, username=''):
             counter += 1
     await ctx.channel.delete_messages(messages_to_delete)
     if username == '':
-        await ctx.channel.send(ctx.message.author.name + ' successfully removed last ' + str(counter) + ' messages.')
+        await ctx.send(ctx.message.author.name + ' successfully removed last ' + str(counter) + ' messages.')
     else:
-        await ctx.channel.send(
+        await ctx.send(
             ctx.message.author.name + ' successfully removed ' + username + "'s last " + str(counter) + ' messages.')
 
 
-@bot.command(name='teams', help='Generate 2 random teams for uses in voice channel (Use \'-member)\' to omit)')
-async def gen_teams(ctx, *usernames):
+@bot.command(name='teams', description='Generate 2 random teams for uses in voice channel (Use \'-member)\' to omit)')
+async def gen_teams(ctx: commands.Context, *usernames):
     embed = discord.Embed(title='Team Generator', colour=discord.Colour.blue())
     user_list = ctx.author.voice.channel.members
     display_name_list = []
@@ -156,17 +162,17 @@ async def gen_teams(ctx, *usernames):
     team_1 = ', '.join(display_name_list[:num_users // 2])
     team_2 = ', '.join(display_name_list[num_users // 2:])
     embed.description = 'Team A:\n\t' + team_1 + '\n\n' + 'Team B:\n\t' + team_2
-    await ctx.channel.send(embed=embed)
+    await ctx.send(embed=embed)
 
 
-@bot.command(name='msg_count', help='msg_count [username] [search_limit]')
-async def msg_count(ctx, username=None, limit: typing.Optional[int] = None):
+@bot.hybrid_command(name='msg_count', description='msg_count [username] [search_limit]')
+async def msg_count(ctx: commands.Context, username=None, limit: typing.Optional[int] = None):
     member = None
     if username is not None:
         try:
             member = await commands.MemberConverter().convert(ctx, username)
         except BadArgument:
-            await ctx.channel.send('Found no user named ' + username)
+            await ctx.send('Found no user named ' + username)
             return
     counter = 0
     global_counter = 0
@@ -175,15 +181,15 @@ async def msg_count(ctx, username=None, limit: typing.Optional[int] = None):
             counter += 1
         global_counter += 1
     if member is not None:
-        await ctx.channel.send(
+        await ctx.send(
             '{0} has typed {1} messages out of {2} in {3} channel.'.format(username, counter, global_counter,
                                                                            ctx.channel.name))
     else:
-        await ctx.channel.send('{0} messages has been typed in {1} channel.'.format(global_counter, ctx.channel.name))
+        await ctx.send('{0} messages has been typed in {1} channel.'.format(global_counter, ctx.channel.name))
 
 
-@bot.command(name='msg_stats', help='Generate 2 random teams for uses in voice channel')
-async def msg_stats(ctx, limit: typing.Optional[int] = None):
+@bot.hybrid_command(name='msg_stats', description='Generate 2 random teams for uses in voice channel')
+async def msg_stats(ctx: commands.Context, limit: typing.Optional[int] = None):
     message_dict = {}
     embed = discord.Embed(title='Message Stats', colour=discord.Colour.blue())
     async for message in ctx.channel.history(limit=limit):
@@ -195,7 +201,7 @@ async def msg_stats(ctx, limit: typing.Optional[int] = None):
     messages_sorted = sorted(message_dict.items(), key=lambda x: x[1], reverse=True)
     for message in messages_sorted:
         embed.description += '{0}: {1}\n'.format(message[0], message[1])
-    await ctx.channel.send(embed=embed)
+    await ctx.send(embed=embed)
 
 
 @bot.event
@@ -231,8 +237,8 @@ async def on_message(message):
     await bot.process_commands(message)
 
 
-@bot.command(name='8ball')
-async def eight_ball(ctx, *, message=None):
+@bot.hybrid_command(name='8ball', description='Answers a yes/no question.')
+async def eight_ball(ctx: commands.Context, *, message: str = None) -> None:
     answers = [
         'It is certain.',
         'It is decidedly so.',
@@ -257,45 +263,49 @@ async def eight_ball(ctx, *, message=None):
     ]
     closed_question = ['are', 'is', 'was', 'were', 'does', 'can', 'have', 'has', 'am', 'should', 'do', 'may', 'will',
                        'could', 'would', 'might', 'did', 'fuck']
+    final_answer = f'> {message}\n\n'
     if message is None:
-        await ctx.channel.send('Type a question you idiot.')
+        final_answer += 'You must ask a question.'
+        await ctx.send(final_answer)
         return
     first_word = message.split(' ')[0]
     if message[-1] != '?' or first_word.lower() not in closed_question:
-        await ctx.channel.send('Learn to formulate a question retard.')
+        final_answer += 'Learn to formulate a question retard.'
+        await ctx.send(final_answer)
         return
     answer = random.choice(answers)
-    await ctx.channel.send(answer)
+    final_answer += f'🎱{answer}'
+    await ctx.send(final_answer)
 
 
-@bot.command(name='join', help='Join current voice channel')
-async def join(ctx):
+@bot.tree.command(name='join', description='Join current voice channel')
+async def join(ctx: commands.Context) -> VoiceProtocol | Any:
     guild = ctx.guild
     author: discord.Member = ctx.author
-    voice_client: discord.VoiceClient = guild.voice_client
+    voice_protocol: discord.VoiceProtocol = guild.voice_client
     channel: discord.VoiceChannel = author.voice.channel
-    if not voice_client:
+    if not voice_protocol:
         vc = await channel.connect()
         return vc
-    elif voice_client.channel != channel:
-        await voice_client.disconnect()
+    elif voice_protocol.channel != channel:
+        await voice_protocol.disconnect(force=True)
         return await channel.connect()
-    return voice_client
+    return voice_protocol
 
 
-@bot.command(name='leave', help='Leaves voice channel')
-async def leave(ctx):
+@bot.hybrid_command(name='leave', description='Leaves voice channel')
+async def leave(ctx: commands.Context):
     guild = ctx.guild
-    voice_client: discord.VoiceClient = guild.voice_client
+    voice_client: discord.VoiceProtocol = guild.voice_client
     if voice_client:
-        await voice_client.disconnect()
+        await voice_client.disconnect(force=True)
 
 
-@bot.command(name='wave', help='Cycle text in channel')
-async def wave(ctx, *, text: str = None):
+@bot.hybrid_command(name='wave', description='Cycle text in channel')
+async def wave(ctx: commands.Context, *, text: str = None):
     if text is None:
         return
-    message = await ctx.channel.send(text)
+    message = await ctx.send(text)
     for i in range(1, len(text) + 1):
         new_text = text[i:]
         new_text += text[:i]
@@ -303,8 +313,8 @@ async def wave(ctx, *, text: str = None):
         await asyncio.sleep(0.5)
 
 
-@bot.command(name='eletter')
-async def eletter(ctx, *, message: str = None):
+@bot.hybrid_command(name='eletter', description='Send fancy message in server')
+async def eletter(ctx: commands.Context, *, message: str = None):
     if message is None:
         return
     translated = ''
@@ -342,7 +352,15 @@ async def eletter(ctx, *, message: str = None):
         else:
             letter_to_add = ord(letter.lower()) - ord(first_letter)
             translated += regional_letters[letter_to_add] + ' '
-    await ctx.channel.send(translated)
+    await ctx.send(translated)
 
 
-bot.run(TOKEN)
+async def main():
+    async with bot:
+        await bot.load_extension(f'cogs.sounds')
+        await bot.load_extension(f'cogs.images')
+        bot.tree.copy_global_to(guild=discord.Object(id=GUILD))
+        await bot.start(TOKEN)
+
+
+asyncio.run(main())
