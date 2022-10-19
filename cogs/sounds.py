@@ -92,6 +92,7 @@ class Sounds(commands.Cog):
             return
         filename = found_clip[0].split(".")[0]
         current_room = ctx.message.author.voice.channel
+        await ctx.send(f'Playing `{filename}`')
         await play_sound(self.bot, current_room, f'{sounds_location}{found_clip[0]}', volume)
         self.clips_usage[filename] = self.clips_usage.get(filename, 0) + 1
         save_obj_s3(self.clips_usage, 'clips_usage', self.s3.Bucket(S3_BUCKET))
