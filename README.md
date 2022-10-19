@@ -1,5 +1,7 @@
 # Discord bot for TheKingdom using discord.py!
 
+[![Deploy](https://button.deta.dev/1/svg)](https://go.deta.dev/deploy?repo=https://github.com/Resized/Pepe-Defender)
+
 ## Install project dependencies
 
 When if you’re going to share the project with the rest of the world you will need to install dependencies by running  `$pip install -r requirements.txt`
