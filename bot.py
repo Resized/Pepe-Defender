@@ -5,12 +5,11 @@ import logging
 import os
 import random
 import typing
-import re
 from typing import Any
 
 import aiohttp
 import discord
-from discord import app_commands, VoiceProtocol
+from discord import VoiceProtocol
 from discord.ext import commands
 from discord.ext.commands import BadArgument
 from dotenv import load_dotenv
@@ -44,17 +43,17 @@ bot = commands.Bot(command_prefix='!', case_insensitive=True, intents=intents)
 
 
 @bot.hybrid_command(description='Loads a given extension.')
-async def load(ctx: commands.Context, extension):
+async def load(ctx: commands.Context, extension: str):
     await bot.load_extension(f'cogs.{extension}')
 
 
 @bot.hybrid_command(description='Unloads a given extension.')
-async def unload(ctx: commands.Context, extension):
+async def unload(ctx: commands.Context, extension: str):
     await bot.unload_extension(f'cogs.{extension}')
 
 
 @bot.hybrid_command(description='Reloads a given extension.')
-async def reload(ctx: commands.Context, extension):
+async def reload(ctx: commands.Context, extension: str):
     await bot.unload_extension(f'cogs.{extension}')
     await bot.load_extension(f'cogs.{extension}')
     for filename in os.listdir('./cogs'):
@@ -78,7 +77,7 @@ async def sync(ctx: commands.Context):
 
 
 @bot.hybrid_command(description='Picks a random gif from the top 10 results and posts it')
-async def giphy(ctx: commands.Context, *, search=None):
+async def giphy(ctx: commands.Context, *, search: str = None):
     embed = discord.Embed(colour=discord.Colour.blue())
     session = aiohttp.ClientSession()
 
@@ -108,7 +107,7 @@ async def giphy(ctx: commands.Context, *, search=None):
 
 @bot.hybrid_command(name='clear', description='Clears last messages out of 20 (can specify by specific user)',
                     guild_ids=[GUILD], with_app_command=True)
-async def message_clear(ctx: commands.Context, amount: typing.Optional[int] = 1, username=''):
+async def message_clear(ctx: commands.Context, amount: typing.Optional[int] = 1, username: str = None):
     user = ''
     counter = 0
     if username != '':
@@ -139,13 +138,13 @@ async def message_clear(ctx: commands.Context, amount: typing.Optional[int] = 1,
             ctx.message.author.name + ' successfully removed ' + username + "'s last " + str(counter) + ' messages.')
 
 
-@bot.command(name='teams', description='Generate 2 random teams for uses in voice channel (Use \'-member)\' to omit)')
-async def gen_teams(ctx: commands.Context, *usernames):
+@bot.hybrid_command(name='teams', description='Generate 2 random teams for uses in voice channel (Use \'-member)\' to omit)')
+async def gen_teams(ctx: commands.Context, usernames: str):
     embed = discord.Embed(title='Team Generator', colour=discord.Colour.blue())
     user_list = ctx.author.voice.channel.members
     display_name_list = []
     users_to_omit = []
-    for member in usernames:
+    for member in usernames.split():
         users_to_omit.append(member[1:])
 
     for member in user_list:
