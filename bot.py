@@ -29,7 +29,6 @@ BENCHUK = int(os.getenv('BENCHUK'))
 GENERAL_CHANNEL = int(os.getenv('GENERAL_CHANNEL'))
 AGULEI_ROLE = int(os.getenv('AGULEI_ROLE'))
 ESCAPE_ROOM = int(os.getenv('ESCAPE_ROOM'))
-FFMPEG = os.getenv('FFMPEG_LOCATION')
 S3_BUCKET = os.getenv('S3_BUCKET')
 AWS_DEFAULT_REGION = os.getenv('AWS_DEFAULT_REGION')
 AWS_ACCESS_KEY_ID = os.getenv('AWS_ACCESS_KEY_ID')
@@ -137,14 +136,16 @@ async def message_clear(ctx: commands.Context, amount: typing.Optional[int] = 1,
             ctx.message.author.name + ' successfully removed ' + username + "'s last " + str(counter) + ' messages.')
 
 
-@bot.hybrid_command(name='teams', description='Generate 2 random teams for uses in voice channel (Use \'-member)\' to omit)')
-async def gen_teams(ctx: commands.Context, usernames: str):
+@bot.hybrid_command(name='teams',
+                    description='Generate 2 random teams for uses in voice channel (Use \'-member)\' to omit)')
+async def gen_teams(ctx: commands.Context, *, usernames: str = None):
     embed = discord.Embed(title='Team Generator', colour=discord.Colour.blue())
     user_list = ctx.author.voice.channel.members
     display_name_list = []
     users_to_omit = []
-    for member in usernames.split():
-        users_to_omit.append(member[1:])
+    if usernames is not None:
+        for member in usernames.split():
+            users_to_omit.append(member[1:])
 
     for member in user_list:
         if not member.bot:
@@ -232,9 +233,6 @@ async def on_message(message):
             emojis = bot.emojis
             react_emoji = random.choice(emojis)
             await message.add_reaction(react_emoji)
-    elif message.author.name.contains('Resized'):
-        ctx = await bot.get_context(message)
-        await ctx.send('yo')
     await bot.process_commands(message)
 
 

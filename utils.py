@@ -8,7 +8,6 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-FFMPEG = os.getenv('FFMPEG_LOCATION')
 MAX_MP3_LENGTH = 5
 MAX_MP3_SIZE = 500000
 sounds_location = 'sounds/'
@@ -22,7 +21,7 @@ async def play_sound(bot, channel, sound_clip, volume=1.0):
     except discord.ClientException:
         voice_client = bot.voice_clients[0]
         to_disconnect = False
-    audio_source = discord.FFmpegPCMAudio(source=sound_clip, executable=FFMPEG)
+    audio_source = discord.FFmpegPCMAudio(source=sound_clip)
     audio_source = discord.PCMVolumeTransformer(audio_source, volume)
     voice_client.play(audio_source)
     while voice_client.is_playing():
