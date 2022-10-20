@@ -105,8 +105,7 @@ async def giphy(ctx: commands.Context, *, search: str = None):
     await ctx.send(embed=embed)
 
 
-@bot.hybrid_command(name='clear', description='Clears last messages out of 20 (can specify by specific user)',
-                    guild_ids=[GUILD], with_app_command=True)
+@bot.hybrid_command(name='clear', description='Clears last messages out of 20 (can specify by specific user)')
 async def message_clear(ctx: commands.Context, amount: typing.Optional[int] = 1, username: str = None):
     user = ''
     counter = 0
@@ -233,6 +232,9 @@ async def on_message(message):
             emojis = bot.emojis
             react_emoji = random.choice(emojis)
             await message.add_reaction(react_emoji)
+    elif message.author.name.contains('Resized'):
+        ctx = await bot.get_context(message)
+        await ctx.send('yo')
     await bot.process_commands(message)
 
 
