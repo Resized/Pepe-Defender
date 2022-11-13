@@ -1,3 +1,4 @@
+import asyncio
 import os
 import random
 
@@ -10,7 +11,7 @@ from mutagen.mp3 import MP3
 from discord.ext import commands
 
 from utils import play_sound, save_obj_s3, get_filename_from_cd, load_obj_s3, sounds_location, obj_location, \
-    MAX_MP3_LENGTH, MAX_MP3_SIZE
+    MAX_MP3_LENGTH, MAX_MP3_SIZE, find_clip
 
 AWS_DEFAULT_REGION = os.getenv('AWS_DEFAULT_REGION')
 AWS_ACCESS_KEY_ID = os.getenv('AWS_ACCESS_KEY_ID')
@@ -67,13 +68,7 @@ class Sounds(commands.Cog):
         available_clips = os.listdir(sounds_location)
         if filename in self.clips_volume.keys():
             volume *= self.clips_volume.get(filename)
-        found_clip = []
-        for clip_name in available_clips:
-            if filename == clip_name.split(".")[0]:
-                found_clip = [clip_name]
-                break
-            elif filename in clip_name.split(".")[0]:
-                found_clip.append(clip_name)
+        found_clip = find_clip(filename)
         if filename == 'fart':
             fart_clips = []
             for fname in available_clips:
@@ -96,6 +91,8 @@ class Sounds(commands.Cog):
         await play_sound(self.bot, current_room, f'{sounds_location}{found_clip[0]}', volume)
         self.clips_usage[filename] = self.clips_usage.get(filename, 0) + 1
         save_obj_s3(self.clips_usage, 'clips_usage', self.s3.Bucket(S3_BUCKET))
+
+
 
     @commands.hybrid_command(name='clips', description='Shows available sound clips')
     async def clips(self, ctx: commands.Context, filename_to_find: str = None):
@@ -203,6 +200,32 @@ class Sounds(commands.Cog):
                 break
         embed.description = description
         await ctx.send(embed=embed)
+
+    @commands.hybrid_command(name='notify', description='Notify user with message')
+    async def notify(self, ctx: commands.Context, member: discord.Member, timer: float = 5.0, message: str = None,
+                     clip_name: str = None):
+        if message is None:
+            message = f'{member.mention} you are being notified by {ctx.author.mention}.'
+        else:
+            message = f'{member.mention} notified with: {message}'
+        if timer < 0:
+            timer = 0
+        if clip_name is None:
+            clip_name = f'{sounds_location}ohno.mp3'
+        msg = await ctx.send(content=f'Notifying {member.mention} in {timer} seconds')
+        while timer > 0:
+            await asyncio.sleep(1)
+            timer -= 1
+            await msg.edit(content=f'Notifying {member.mention} in {timer} seconds')
+        if member.voice is None:
+            await ctx.send(content=f'{member.mention} is not in voice channel', ephemeral=True)
+        else:
+            found_clip = find_clip(clip_name)
+            if found_clip:
+                await play_sound(self.bot, member.voice.channel, f'{sounds_location}{found_clip[0]}', volume=0.5)
+            else:
+                await ctx.send(content=f'Clip {clip_name} not found', ephemeral=True)
+        await ctx.send(content=message, allowed_mentions=discord.AllowedMentions(users=True))
 
 
 async def setup(bot):

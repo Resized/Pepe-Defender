@@ -1,7 +1,7 @@
 import asyncio
+import os
 import re
 import discord
-import os
 import pickle
 
 from dotenv import load_dotenv
@@ -29,6 +29,18 @@ async def play_sound(bot, channel, sound_clip, volume=1.0):
     if to_disconnect:
         voice_client.stop()
         await voice_client.disconnect()
+
+
+def find_clip(filename):
+    available_clips = os.listdir(sounds_location)
+    found_clip = []
+    for clip_name in available_clips:
+        if filename == clip_name.split(".")[0]:
+            found_clip = [clip_name]
+            break
+        elif filename in clip_name.split(".")[0]:
+            found_clip.append(clip_name)
+    return found_clip
 
 
 def get_filename_from_cd(cd):
